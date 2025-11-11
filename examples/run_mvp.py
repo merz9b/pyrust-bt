@@ -25,10 +25,10 @@ class DummySMAStrategy(Strategy):
             return None
         sma = sum(self._closes[-self.window :]) / self.window
         if close > sma:
-            # 市价买入
+            # Market buy order
             return {"action": "BUY", "type": "market", "size": self.size}
         elif close < sma:
-            # 限价卖出（用当前价作为限价，示例可立即成交）
+            # Limit sell order (using current price as limit, will execute immediately in this example)
             return {"action": "SELL", "type": "limit", "size": self.size, "price": close}
         return None
 
@@ -46,8 +46,8 @@ def main() -> None:
         start="2016-01-01",
         end="2025-12-31",
         cash=10000.0,
-        commission_rate=0.0005,  # 5 bps 手续费
-        slippage_bps=2.0,        # 2 bps 滑点
+        commission_rate=0.0005,  # 5 bps commission
+        slippage_bps=2.0,        # 2 bps slippage
     )
     engine = BacktestEngine(cfg)
 
@@ -63,8 +63,43 @@ def main() -> None:
     strategy = DummySMAStrategy(window=5, size=1.0)
     result = engine.run(strategy, bars)
 
-    print("Result:", {k: result[k] for k in ("cash", "position", "avg_cost", "equity", "realized_pnl")})
-    print("Stats:", result.get("stats"))
+    # Format output for readability
+    print("\n" + "=" * 60)
+    print("Backtest Results")
+    print("=" * 60)
+    
+    # Account information
+    print("\n[Account Information]")
+    print(f"  Cash Balance:      {result.get('cash', 0):>15,.2f}")
+    print(f"  Position:          {result.get('position', 0):>15,.2f}")
+    print(f"  Average Cost:      {result.get('avg_cost', 0):>15,.4f}")
+    print(f"  Total Equity:      {result.get('equity', 0):>15,.2f}")
+    print(f"  Realized P&L:      {result.get('realized_pnl', 0):>15,.2f}")
+    
+    # Statistics
+    stats = result.get("stats", {})
+    if stats:
+        print("\n[Return Metrics]")
+        print(f"  Start Equity:      {stats.get('start_equity', 0):>15,.2f}")
+        print(f"  End Equity:        {stats.get('end_equity', 0):>15,.2f}")
+        print(f"  Total Return:      {stats.get('total_return', 0):>15,.2%}")
+        print(f"  Annualized Return: {stats.get('annualized_return', 0):>15,.2%}")
+        
+        print("\n[Risk Metrics]")
+        print(f"  Volatility:        {stats.get('volatility', 0):>15,.4f}")
+        print(f"  Sharpe Ratio:      {stats.get('sharpe', 0):>15,.4f}")
+        print(f"  Calmar Ratio:      {stats.get('calmar', 0):>15,.4f}")
+        print(f"  Max Drawdown:      {stats.get('max_drawdown', 0):>15,.4f}")
+        print(f"  Max DD Duration:   {stats.get('max_dd_duration', 0):>15,} bars")
+        
+        print("\n[Trade Statistics]")
+        print(f"  Total Trades:      {stats.get('total_trades', 0):>15,}")
+        print(f"  Winning Trades:    {stats.get('winning_trades', 0):>15,}")
+        print(f"  Losing Trades:     {stats.get('losing_trades', 0):>15,}")
+        print(f"  Win Rate:          {stats.get('win_rate', 0):>15,.2%}")
+        print(f"  Total P&L:         {stats.get('total_pnl', 0):>15,.2f}")
+    
+    print("\n" + "=" * 60 + "\n")
 
 
 if __name__ == "__main__":
